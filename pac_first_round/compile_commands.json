@@ -1,0 +1,10 @@
+[
+    {
+        "command": "nvcc  \"@/tmp/icpx0804048790O6jGvl/icpxargiswTSl\" -D__CUDACC__=1",
+        "directory": "/home/inspur/nfs/lgy/PAC/pac_first_round"
+    },
+    {
+        "command": "nvcc  \"@/tmp/icpx0403155813vvYPEB/icpxargJNLbMB\" -D__CUDACC__=1",
+        "directory": "/home/inspur/nfs/lgy/PAC/pac_first_round"
+    }
+]

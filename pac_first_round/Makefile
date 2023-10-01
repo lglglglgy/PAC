@@ -3,17 +3,17 @@ CXX=icpx
 
 gpp_obj = main.o
 
-CXXFLAGS = -Ofast -std=c++11 -qopenmp
+CXXFLAGS = -Ofast -std=c++17   -qopenmp -xhost -fsycl -g
 LDFLAGS = 
 
 all: main 
 EXEC= main
 
 main: $(gpp_obj)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(gpp_obj) -o $(EXEC).exe
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(gpp_obj) -o $(EXEC).exe -g
 
-%.o: %.cpp
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
+%.o: %.cu 
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@ -g 
 
 
 clean:
