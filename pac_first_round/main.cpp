@@ -136,6 +136,12 @@ int main(int argc, char **argv)
   auto wx_array = sycl::malloc_shared<DataType>(nend - nstart + 1, selector);
   memFootPrint += 3 * (nend - nstart) * sizeof(DataType);
 
+auto ach_re0 = sycl::malloc_shared<DataType>(ncouls, selector);
+auto ach_re1 = sycl::malloc_shared<DataType>(ncouls, selector);
+auto ach_re2 = sycl::malloc_shared<DataType>(ncouls, selector);
+auto ach_im0 = sycl::malloc_shared<DataType>(ncouls, selector);
+auto ach_im1 = sycl::malloc_shared<DataType>(ncouls, selector);
+auto ach_im2 = sycl::malloc_shared<DataType>(ncouls, selector);
   // Print Memory Foot print
   cout << "Memory Foot Print = " << memFootPrint / pow(1024, 3) << " GBs"
        << endl;
@@ -161,9 +167,10 @@ int main(int argc, char **argv)
 
 // 初始化vcoul为0
 #pragma omp simd
-  for (int i = 0; i < ncouls; i++)
+  for (int i = 0; i < ncouls; i++){
     vcoul[i] = 1.0;
-
+    //ach_im2[i]=2;
+}
 // ncouls/ngpown
 #pragma omp simd
   for (int ig = 0; ig < ngpown; ++ig)
@@ -187,7 +194,7 @@ int main(int argc, char **argv)
 
   noflagOCC_solver(number_bands, ngpown, ncouls, inv_igp_index, indinv,
                    wx_array, wtilde_array, aqsmtemp, aqsntemp, I_eps_array,
-                   vcoul, achtemp);
+                   vcoul, achtemp, ach_re0, ach_re1, ach_re2, ach_im0, ach_im1, ach_im2);
 
   k_end = system_clock::now();
   duration<double> elapsed = k_end - k_start;
@@ -217,16 +224,27 @@ void noflagOCC_solver(size_t number_bands, size_t ngpown, size_t ncouls,
                       int *inv_igp_index, int *indinv, DataType *wx_array,
                       ComplexType *wtilde_array, ComplexType *aqsmtemp,
                       ComplexType *aqsntemp, ComplexType *I_eps_array,
-                      DataType *vcoul, ComplexType *achtemp)
+                      DataType *vcoul, ComplexType *achtemp,
+                      DataType * ach_re0,DataType * ach_re1,
+                      DataType * ach_re2,DataType * ach_im0,
+                      DataType * ach_im1,DataType * ach_im2)
 {
   time_point<system_clock> start, end;
   start = system_clock::now();
   // Vars to use for reduction
-  DataType ach_re0 = 0.00, ach_re1 = 0.00, ach_re2 = 0.00, ach_im0 = 0.00,
-           ach_im1 = 0.00, ach_im2 = 0.00;
-#pragma omp parallel for reduction(+ : ach_re0, ach_re1, ach_re2, ach_im0, ach_im1, ach_im2) schedule(guided, 8)
-  for (int ig = 0; ig < ncouls; ig += 64)
-  {
+ 
+//#pragma omp parallel for reduction(+ : ach_re0, ach_re1, ach_re2, ach_im0, ach_im1, ach_im2) schedule(guided, 8)
+sycl::queue q{sycl::gpu_selector{}};
+
+// double ach_re0 = 0.00, ach_re1 = 0.00, ach_re2 = 0.00, ach_im0 = 0.00,ach_im1 = 0.00, ach_im2 = 0.00;
+
+q.submit([&](sycl::handler &h) { 
+  //for (int ig = 0; ig < ncouls; ig += 64)
+  h.parallel_for(sycl::range<1>{ncouls},
+[=](sycl::id<1> ig ) 
+
+    {
+     
     for (int n1 = 0; n1 < number_bands; ++n1)
     {
       for (int my_igp = 0; my_igp < ngpown; ++my_igp)
@@ -237,8 +255,8 @@ void noflagOCC_solver(size_t number_bands, size_t ngpown, size_t ncouls,
             ComplexType_conj(aqsmtemp[n1 * ncouls + igp]) *
             aqsntemp[n1 * ncouls + igp] * 0.5 * vcoul[igp] *
             wtilde_array[my_igp * ncouls + igp];
-        int i = 64;
-        while (i--)
+        // int i = 64;
+        // while (i--)
         {
           //
           /*for (int iw = nstart; iw < nend; ++iw) {
@@ -247,6 +265,7 @@ void noflagOCC_solver(size_t number_bands, size_t ngpown, size_t ncouls,
           }*/
           DataType achtemp_re_loc[nend - nstart + 1], achtemp_im_loc[nend - nstart + 1];
 
+          
           for (int iw = nstart; iw < nend + 1; ++iw)
           {
             ComplexType wdiff =
@@ -260,18 +279,42 @@ void noflagOCC_solver(size_t number_bands, size_t ngpown, size_t ncouls,
             achtemp_re_loc[iw] = (sch_array).real();
             achtemp_im_loc[iw] = (sch_array).imag();
           }
-
-          ach_re0 += achtemp_re_loc[0];
-          ach_re1 += achtemp_re_loc[1];
-          ach_re2 += achtemp_re_loc[2];
-          ach_im0 += achtemp_im_loc[0];
-          ach_im1 += achtemp_im_loc[1];
-          ach_im2 += achtemp_im_loc[2];
+          ach_re0[ig] += achtemp_re_loc[0];
+          ach_re1[ig] += achtemp_re_loc[1];
+          ach_re2[ig] += achtemp_re_loc[2];
+          ach_im0[ig] += achtemp_im_loc[0];
+          ach_im1[ig] += achtemp_im_loc[1];
+          ach_im2[ig] += achtemp_im_loc[2];
         }
       }
     }
+  });
+});
+q.wait();
+#pragma omp parallel for  reduction(+ : achtemp[0]) schedule(guided, 8)
+  for (int ig = 0; ig < ncouls; ++ig)
+  {
+    achtemp[0] += ComplexType(ach_re0[ig], ach_im0[ig]);
+
   }
-  achtemp[0] = ComplexType(ach_re0, ach_im0);
-  achtemp[1] = ComplexType(ach_re1, ach_im1);
-  achtemp[2] = ComplexType(ach_re2, ach_im2);
+  #pragma omp parallel for  reduction(+ : achtemp[1]) schedule(guided, 8)
+  for (int ig = 0; ig < ncouls; ++ig)
+  {
+    achtemp[1] += ComplexType(ach_re1[ig], ach_im1[ig]);
+
+  }
+ #pragma omp parallel for  reduction(+ :  achtemp[2]) schedule(static, 8)
+  for (int ig = 0; ig < ncouls; ++ig)
+  {
+    achtemp[2] += ComplexType(ach_re2[ig], ach_im2[ig]);
+
+  } 
+//   {
+//     std::cout<<ach_re1[ig]<<" "<<ach_im1[ig]<<std::endl;
+//   }
+  //end = system_clock::now();
+
+  // achtemp[0] = ComplexType(ach_re0, ach_im0);
+  // achtemp[1] = ComplexType(ach_re1, ach_im1);
+  // achtemp[2] = ComplexType(ach_re2, ach_im2);
 }

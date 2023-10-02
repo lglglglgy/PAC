@@ -5,7 +5,6 @@
 #include <iostream>
 using namespace std;
 using namespace chrono;
-
 using namespace std::chrono;
 
 #define nstart 0
@@ -49,7 +48,13 @@ noflagOCC_solver(size_t number_bands,
                  ComplexType * aqsntemp,
                  ComplexType * I_eps_array,
                  DataType * vcoul,
-                 ComplexType * achtemp);
+                 ComplexType * achtemp,
+                 DataType * ach_re0,
+                 DataType * ach_re1,
+                 DataType * ach_re2,
+                 DataType * ach_im0,
+                 DataType * ach_im1,
+                 DataType * ach_im2);
 
 inline void ComplexType_print(ComplexType &src)
 {
