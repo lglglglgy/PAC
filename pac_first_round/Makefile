@@ -3,7 +3,7 @@ CXX=icpx
 
 gpp_obj = main.o
 
-CXXFLAGS = -Ofast -std=c++17   -qopenmp -xhost -fsycl -g  -fsycl-targets=nvptx64-nvidia-cuda
+CXXFLAGS = -Ofast -std=c++17   -qopenmp -xhost -fsycl -g  
 LDFLAGS = 
 
 all: main 

@@ -142,6 +142,7 @@ auto ach_re2 = sycl::malloc_shared<DataType>(ncouls, selector);
 auto ach_im0 = sycl::malloc_shared<DataType>(ncouls, selector);
 auto ach_im1 = sycl::malloc_shared<DataType>(ncouls, selector);
 auto ach_im2 = sycl::malloc_shared<DataType>(ncouls, selector);
+memFootPrint += ncouls * sizeof(DataType)*6;
   // Print Memory Foot print
   cout << "Memory Foot Print = " << memFootPrint / pow(1024, 3) << " GBs"
        << endl;
@@ -257,7 +258,7 @@ q.submit([&](sycl::handler &h) {
         int indigp = inv_igp_index[my_igp];
         int igp = indinv[indigp];
         ComplexType sch_store1 =
-            ComplexType_conj(aqsmtemp[n1 * ncouls + igp]) *
+            std::conj(aqsmtemp[n1 * ncouls + igp]) *
             aqsntemp[n1 * ncouls + igp] * 0.5 * vcoul[igp] *
             wtilde_array[my_igp * ncouls + igp];
         // int i = 64;
@@ -296,11 +297,12 @@ q.submit([&](sycl::handler &h) {
   });
 });
 q.wait();
-#pragma omp parallel for  reduction(+ : achtemp[0]) schedule(guided, 8)
+//#pragma omp parallel for  reduction(+ : achtemp[0]) schedule(guided, 8)
   for (int ig = 0; ig < ncouls; ++ig)
   {
     achtemp[0] += ComplexType(ach_re0[ig], ach_im0[ig]);
-
+    //std::cout<<ach_im0[ig]<<std::endl;
+    printf("%lf\n",ach_im0[ig]);
   }
   #pragma omp parallel for  reduction(+ : achtemp[1]) schedule(guided, 8)
   for (int ig = 0; ig < ncouls; ++ig)
