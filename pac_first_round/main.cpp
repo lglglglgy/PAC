@@ -241,6 +241,7 @@ void noflagOCC_solver(size_t number_bands, size_t ngpown, size_t ncouls,
  
 //#pragma omp parallel for reduction(+ : ach_re0, ach_re1, ach_re2, ach_im0, ach_im1, ach_im2) schedule(guided, 8)
 sycl::queue q{sycl::gpu_selector_v};
+std::cout<<q.get_device().get_info<sycl::info::device::name>()<<std::endl;
 
 // double ach_re0 = 0.00, ach_re1 = 0.00, ach_re2 = 0.00, ach_im0 = 0.00,ach_im1 = 0.00, ach_im2 = 0.00;
 
