@@ -14,9 +14,9 @@ inline void correntess0(ComplexType result)
 #endif
 
   if (re_diff < 0.001 && im_diff < 0.001)
-    printf("\n!!!! SUCCESS - !!!! Correctness0 test passed :-D :-D\n\n");
+    printf("\n!!!! SUCCESS - !!!! Correctness0 test passed :-D :-D   re:%lf im:%lf \n\n",re_diff,im_diff);
   else
-    printf("\n!!!! FAILURE - Correctness0 test failed :-( :-(  \n");
+    printf("\n!!!! FAILURE - Correctness0 test failed :-( :-(        re:%lf im:%lf \n\n",re_diff,im_diff);
 }
 inline void correntess1(ComplexType result)
 {
@@ -30,9 +30,9 @@ inline void correntess1(ComplexType result)
 #endif
 
   if (re_diff < 0.001 && im_diff < 0.001)
-    printf("\n!!!! SUCCESS - !!!! Correctness1 test passed :-D :-D\n\n");
+    printf("\n!!!! SUCCESS - !!!! Correctness1 test passed :-D :-D   re:%lf im:%lf \n\n",re_diff,im_diff);
   else
-    printf("\n!!!! FAILURE - Correctness1 test failed :-( :-(  \n");
+    printf("\n!!!! FAILURE - Correctness1 test failed :-( :-(        re:%lf im:%lf \n\n",re_diff,im_diff);
 }
 inline void correntess2(ComplexType result)
 {
@@ -46,9 +46,9 @@ inline void correntess2(ComplexType result)
 #endif
 
   if (re_diff < 0.001 && im_diff < 0.001)
-    printf("\n!!!! SUCCESS - !!!! Correctness2 test passed :-D :-D\n\n");
+    printf("\n!!!! SUCCESS - !!!! Correctness2 test passed :-D :-D   re:%lf im:%lf \n\n",re_diff,im_diff);
   else
-    printf("\n!!!! FAILURE - Correctness2 test failed :-( :-(  \n");
+    printf("\n!!!! FAILURE - Correctness2 test failed :-( :-(        re:%lf im:%lf \n\n",re_diff,im_diff);
 }
 
 int main(int argc, char **argv)
@@ -169,7 +169,12 @@ auto ach_im2 = sycl::malloc_shared<DataType>(ncouls, selector);
 #pragma omp simd
   for (int i = 0; i < ncouls; i++){
     vcoul[i] = 1.0;
-    //ach_im2[i]=2;
+    ach_re0[i]=0;
+    ach_re1[i]=0;
+    ach_re2[i]=0;
+    ach_im0[i]=0;
+    ach_im1[i]=0;
+    ach_im2[i]=0;
 }
 // ncouls/ngpown
 #pragma omp simd
@@ -180,7 +185,7 @@ auto ach_im2 = sycl::malloc_shared<DataType>(ncouls, selector);
 #pragma omp simd
   for (int ig = 0; ig < ncouls; ++ig)
     indinv[ig] = ig;
-  indinv[ncouls] = ncouls - 1;
+  //indinv[ncouls] = ncouls - 1;
 
 #pragma omp simd
   for (int iw = nstart; iw < nend; ++iw)
@@ -234,7 +239,7 @@ void noflagOCC_solver(size_t number_bands, size_t ngpown, size_t ncouls,
   // Vars to use for reduction
  
 //#pragma omp parallel for reduction(+ : ach_re0, ach_re1, ach_re2, ach_im0, ach_im1, ach_im2) schedule(guided, 8)
-sycl::queue q{sycl::gpu_selector{}};
+sycl::queue q{sycl::gpu_selector_v};
 
 // double ach_re0 = 0.00, ach_re1 = 0.00, ach_re2 = 0.00, ach_im0 = 0.00,ach_im1 = 0.00, ach_im2 = 0.00;
 
@@ -259,14 +264,14 @@ q.submit([&](sycl::handler &h) {
         // while (i--)
         {
           //
-          /*for (int iw = nstart; iw < nend; ++iw) {
+     
+          DataType achtemp_re_loc[nend - nstart ], achtemp_im_loc[nend - nstart ];
+     for (int iw = nstart; iw < nend; ++iw) {
             achtemp_re_loc[iw] = 0.00;
             achtemp_im_loc[iw] = 0.00;
-          }*/
-          DataType achtemp_re_loc[nend - nstart + 1], achtemp_im_loc[nend - nstart + 1];
-
+          }
           
-          for (int iw = nstart; iw < nend + 1; ++iw)
+          for (int iw = nstart; iw < nend ; ++iw)
           {
             ComplexType wdiff =
                 wx_array[iw] - wtilde_array[my_igp * ncouls + ig];
